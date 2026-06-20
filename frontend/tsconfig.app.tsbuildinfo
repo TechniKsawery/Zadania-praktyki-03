@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/adminpanel.tsx","./src/components/dashboard.tsx","./src/components/playerprofile.tsx"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/adminpanel.tsx","./src/components/dashboard.tsx","./src/components/playerprofile.tsx","./src/components/radarchart.tsx","./src/components/sidebar.tsx","./src/services/api.ts"],"version":"5.9.3"}

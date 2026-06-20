@@ -23,12 +23,12 @@ function App() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loadingUser, setLoadingUser] = useState(!!token);
 
-  // Routing state
+  // Stan nawigacji / routingu
   const [currentView, setCurrentView] = useState<'dashboard' | 'player-details' | 'admin'>('dashboard');
   const [selectedPlayerId, setSelectedPlayerId] = useState<number | null>(null);
   const [isRegister, setIsRegister] = useState(false);
 
-  // Auth Forms State
+  // Stan formularzy autoryzacji
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authUsername, setAuthUsername] = useState('');
@@ -36,7 +36,7 @@ function App() {
   const [authRole, setAuthRole] = useState('SCOUT');
   const [authError, setAuthError] = useState('');
 
-  // Notifications State
+  // Stan powiadomień
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -45,7 +45,7 @@ function App() {
       localStorage.setItem('token', token);
       fetchUserProfile();
       fetchNotifications();
-      // Poll notifications every 15 seconds
+      // Odpytuj o powiadomienia co 15 sekund
       const interval = setInterval(fetchNotifications, 15000);
       return () => clearInterval(interval);
     } else {
@@ -128,7 +128,7 @@ function App() {
         body: JSON.stringify({ email: authEmail, password: authPassword })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Login failed');
+      if (!res.ok) throw new Error(data.error || 'Logowanie nie powiodło się');
 
       setToken(data.token);
       setUser(data.user);
@@ -154,7 +154,7 @@ function App() {
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      if (!res.ok) throw new Error(data.error || 'Rejestracja nie powiodła się');
 
       setToken(data.token);
       setUser(data.user);
@@ -176,12 +176,12 @@ function App() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', flexDirection: 'column', gap: '15px' }}>
         <div style={{ border: '4px solid rgba(255,255,255,0.05)', borderTop: '4px solid var(--color-primary)', borderRadius: '50%', width: '40px', height: '40px', animation: 'spin 1s linear infinite' }} />
-        <span>Authorizing Scout Session...</span>
+        <span>Autoryzacja sesji skauta...</span>
       </div>
     );
   }
 
-  // RENDER LOGIN / REGISTER VIEW
+  // WIDOK LOGOWANIA / REJESTRACJI
   if (!token) {
     return (
       <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -191,7 +191,7 @@ function App() {
               SCOUT PRO
             </h1>
             <p style={{ color: 'var(--color-text-muted)', fontSize: '14px' }}>
-              {isRegister ? 'Create scout account' : 'Football Scouting Platform'}
+              {isRegister ? 'Utwórz konto skauta' : 'Platforma do Scoutingu Piłkarskiego'}
             </p>
           </div>
 
@@ -206,56 +206,56 @@ function App() {
             <form onSubmit={handleRegister}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Username</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Nazwa użytkownika</label>
                   <input type="text" required value={authUsername} onChange={e => setAuthUsername(e.target.value)} className="glass-input" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Full Name</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Imię i nazwisko</label>
                   <input type="text" required value={authName} onChange={e => setAuthName(e.target.value)} className="glass-input" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Email</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Adres e-mail</label>
                   <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="glass-input" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Password</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Hasło</label>
                   <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="glass-input" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Role</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Rola systemowa</label>
                   <select value={authRole} onChange={e => setAuthRole(e.target.value)} className="glass-input" style={{ background: 'var(--bg-main)' }}>
-                    <option value="SCOUT">SCOUT</option>
-                    <option value="HEAD_SCOUT">HEAD SCOUT</option>
-                    <option value="ADMIN">ADMIN</option>
+                    <option value="SCOUT">SKAUT (SCOUT)</option>
+                    <option value="HEAD_SCOUT">SZEF SCOUTINGU (HEAD SCOUT)</option>
+                    <option value="ADMIN">ADMINISTRATOR (ADMIN)</option>
                   </select>
                 </div>
               </div>
               <button type="submit" className="btn btn-primary" style={{ width: '100%', gap: '8px', marginBottom: '15px' }}>
-                <UserPlus size={16} /> Sign Up
+                <UserPlus size={16} /> Zarejestruj się
               </button>
               <div style={{ textAlign: 'center', fontSize: '13px' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>Already have an account? </span>
-                <button type="button" onClick={() => setIsRegister(false)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}>Log In</button>
+                <span style={{ color: 'var(--color-text-muted)' }}>Masz już konto? </span>
+                <button type="button" onClick={() => setIsRegister(false)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}>Zaloguj się</button>
               </div>
             </form>
           ) : (
             <form onSubmit={handleLogin}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '25px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Email</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Adres e-mail</label>
                   <input type="email" required value={authEmail} onChange={e => setAuthEmail(e.target.value)} className="glass-input" />
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Password</label>
+                  <label style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Hasło</label>
                   <input type="password" required value={authPassword} onChange={e => setAuthPassword(e.target.value)} className="glass-input" />
                 </div>
               </div>
               <button type="submit" className="btn btn-primary" style={{ width: '100%', gap: '8px', marginBottom: '15px' }}>
-                <LogIn size={16} /> Log In
+                <LogIn size={16} /> Zaloguj się
               </button>
               <div style={{ textAlign: 'center', fontSize: '13px' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>New to Scout Pro? </span>
-                <button type="button" onClick={() => setIsRegister(true)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}>Register</button>
+                <span style={{ color: 'var(--color-text-muted)' }}>Nowy w Scout Pro? </span>
+                <button type="button" onClick={() => setIsRegister(true)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}>Utwórz konto</button>
               </div>
             </form>
           )}
@@ -264,11 +264,11 @@ function App() {
     );
   }
 
-  // RENDER APP SHELL
+  // WIDOK GŁÓWNY APILKACJI
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Top Navbar */}
+      {/* Pasek Nawigacyjny */}
       <header className="glass-panel" style={{ borderRadius: '0px', borderTop: 'none', borderLeft: 'none', borderRight: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 30px', position: 'sticky', top: 0, zIndex: 999 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <h2 style={{ fontSize: '20px', cursor: 'pointer' }} onClick={() => { setCurrentView('dashboard'); setSelectedPlayerId(null); }}>
@@ -277,7 +277,7 @@ function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          {/* Notifications Button */}
+          {/* Dzwonek powiadomień */}
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
@@ -291,16 +291,16 @@ function App() {
               )}
             </button>
 
-            {/* Notifications Dropdown */}
+            {/* Panel powiadomień */}
             {showNotifications && (
               <div className="glass-panel animate-fade-in" style={{ position: 'absolute', right: 0, top: '40px', width: '320px', padding: '15px', background: 'var(--bg-main)', zIndex: 1001, maxHeight: '400px', overflowY: 'auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
-                  <h4 style={{ fontSize: '14px' }}>Notifications</h4>
-                  <button onClick={clearNotifications} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '11px', cursor: 'pointer' }}>Clear Read</button>
+                  <h4 style={{ fontSize: '14px' }}>Powiadomienia</h4>
+                  <button onClick={clearNotifications} style={{ background: 'none', border: 'none', color: 'var(--color-text-muted)', fontSize: '11px', cursor: 'pointer' }}>Wyczyść przeczytane</button>
                 </div>
 
                 {notifications.length === 0 ? (
-                  <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', padding: '15px 0' }}>No notifications</p>
+                  <p style={{ textAlign: 'center', fontSize: '12px', color: 'var(--color-text-muted)', padding: '15px 0' }}>Brak nowych powiadomień</p>
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {notifications.map(n => (
@@ -321,7 +321,7 @@ function App() {
             )}
           </div>
 
-          {/* User Name & Role */}
+          {/* Nazwa i rola użytkownika */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>{user?.name}</span>
             <span style={{ fontSize: '11px', fontWeight: 800, padding: '2px 6px', background: 'rgba(255,255,255,0.08)', borderRadius: '4px' }}>{user?.role}</span>
@@ -329,7 +329,7 @@ function App() {
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Główny obszar roboczy */}
       <main style={{ flexGrow: 1, padding: '20px 0' }}>
         {currentView === 'dashboard' && (
           <Dashboard 

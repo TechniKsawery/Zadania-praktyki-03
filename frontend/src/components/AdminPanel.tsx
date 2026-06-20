@@ -32,7 +32,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
         }
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to fetch users');
+      if (!res.ok) throw new Error(data.error || 'Nie udało się pobrać listy użytkowników');
       setUsers(data);
     } catch (err: any) {
       setError(err.message);
@@ -58,10 +58,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
         body: JSON.stringify({ role: newRole })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to update role');
+      if (!res.ok) throw new Error(data.error || 'Nie udało się zmienić roli użytkownika');
       
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-      setSuccess(`Updated role for ${data.username} to ${newRole}`);
+      setSuccess(`Zmieniono rolę dla ${data.username} na ${newRole}`);
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(err.message);
@@ -72,12 +72,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
     <div className="animate-fade-in" style={{ maxWidth: '1000px', margin: '0 auto', padding: '20px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '30px' }}>
         <button onClick={onBack} className="btn btn-secondary" style={{ padding: '8px 16px' }}>
-          <ArrowLeft size={16} /> Back to Dashboard
+          <ArrowLeft size={16} /> Powrót do Pulpitu
         </button>
         <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <Shield size={24} style={{ color: 'var(--color-primary)' }} /> User Role Management
+          <Shield size={24} style={{ color: 'var(--color-primary)' }} /> Zarządzanie Rolami Użytkowników
         </h2>
-        <button onClick={fetchUsers} className="btn btn-secondary" style={{ padding: '8px' }} title="Refresh">
+        <button onClick={fetchUsers} className="btn btn-secondary" style={{ padding: '8px' }} title="Odśwież">
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
         </button>
       </div>
@@ -99,17 +99,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
       <div className="glass-panel" style={{ padding: '20px', overflowX: 'auto' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px', color: 'var(--color-text-muted)' }}>
-            Loading users...
+            Ładowanie listy użytkowników...
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border-color)', color: 'var(--color-text-muted)' }}>
-                <th style={{ padding: '12px' }}>Scout / User</th>
-                <th style={{ padding: '12px' }}>Email</th>
-                <th style={{ padding: '12px' }}>Joined Date</th>
-                <th style={{ padding: '12px' }}>Role</th>
-                <th style={{ padding: '12px', textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '12px' }}>Skaut / Użytkownik</th>
+                <th style={{ padding: '12px' }}>Adres E-mail</th>
+                <th style={{ padding: '12px' }}>Data rejestracji</th>
+                <th style={{ padding: '12px' }}>Rola</th>
+                <th style={{ padding: '12px', textAlign: 'right' }}>Działania</th>
               </tr>
             </thead>
             <tbody>
@@ -143,7 +143,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
                   </td>
                   <td style={{ padding: '16px 12px', textAlign: 'right' }}>
                     {user.email === currentUserEmail ? (
-                      <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>You (Cannot Edit)</span>
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-muted)' }}>Ty (Brak edycji)</span>
                     ) : (
                       <select 
                         value={user.role} 
@@ -151,9 +151,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ token, onBack, currentUs
                         className="glass-input"
                         style={{ padding: '5px 10px', fontSize: '13px', background: 'var(--bg-main)' }}
                       >
-                        <option value="SCOUT">SCOUT</option>
-                        <option value="HEAD_SCOUT">HEAD SCOUT</option>
-                        <option value="ADMIN">ADMIN</option>
+                        <option value="SCOUT">SKAUT (SCOUT)</option>
+                        <option value="HEAD_SCOUT">SZEF SCOUTINGU (HEAD SCOUT)</option>
+                        <option value="ADMIN">ADMINISTRATOR (ADMIN)</option>
                       </select>
                     )}
                   </td>
