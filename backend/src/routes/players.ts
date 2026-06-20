@@ -1,102 +1,88 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import { authenticateJWT, AuthenticatedRequest, requireRole } from '../middleware/auth';
+import { authenticateJWT, authorizeRoles, AuthenticatedRequest } from '../middleware/auth.js';
 
-const prisma = new PrismaClient();
 const router = Router();
+const prisma = new PrismaClient();
 
-// Ensure uploads directory exists
-const uploadDir = path.join(__dirname, '../../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer config for photo upload
+// Multer storage setup
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    let dest = 'uploads/';
+    if (file.fieldname === 'photo') {
+      dest = 'uploads/photos/';
+    } else if (file.fieldname === 'video') {
+      dest = 'uploads/videos/';
+    }
+    // Ensure directory exists
+    fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, 'photo-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({
-  storage,
+  storage: storage,
   fileFilter: (req, file, cb) => {
-    const filetypes = /jpeg|jpg|png|gif|webp/;
-    const mimetype = filetypes.test(file.mimetype);
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-    if (mimetype && extname) {
-      return cb(null, true);
+    if (file.fieldname === 'photo') {
+      const allowedTypes = /jpeg|jpg|png|webp/i;
+      const ext = allowedTypes.test(path.extname(file.originalname));
+      const mime = allowedTypes.test(file.mimetype);
+      if (ext && mime) {
+        return cb(null, true);
+      }
+      cb(new Error('Tylko zdjęcia są dozwolone (jpeg, jpg, png, webp).'));
+    } else if (file.fieldname === 'video') {
+      const allowedTypes = /mp4|mov|avi|mkv/i;
+      const ext = allowedTypes.test(path.extname(file.originalname));
+      const mime = allowedTypes.test(file.mimetype);
+      if (ext && mime) {
+        return cb(null, true);
+      }
+      cb(new Error('Tylko nagrania wideo są dozwolone (mp4, mov, avi, mkv).'));
+    } else {
+      cb(null, true);
     }
-    cb(new Error('Only image files are allowed!'));
-  },
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
+  }
 });
 
-// Helper: Notify users of changes
-async function createNotificationForWatchers(playerId: number, message: string) {
+// GET / - List players with filtering (matching Dashboard.tsx search & filter options)
+router.get('/', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const watchers = await prisma.watchlist.findMany({
-      where: { playerId }
-    });
-    const notifications = watchers.map(w => ({
-      userId: w.userId,
-      message
-    }));
-    if (notifications.length > 0) {
-      await prisma.notification.createMany({
-        data: notifications
-      });
-    }
-  } catch (err) {
-    console.error('Error creating notifications:', err);
-  }
-}
-
-// Get all players with advanced filtering
-router.get('/', authenticateJWT as any, async (req: AuthenticatedRequest, res) => {
-  try {
-    const { position, country, club, minAge, maxAge, minPotential, search } = req.query;
+    const { minAge, maxAge, position, country, club, minPotential, search } = req.query;
 
     const whereClause: any = {};
 
     if (position) {
-      whereClause.position = String(position);
+      whereClause.position = position as string;
     }
     if (country) {
-      whereClause.nationality = String(country);
+      whereClause.nationality = { contains: country as string };
     }
     if (club) {
-      whereClause.club = { contains: String(club) };
+      whereClause.club = { contains: club as string };
     }
-
-    // Age filtering
-    if (minAge || maxAge) {
-      whereClause.age = {};
-      if (minAge) whereClause.age.gte = parseInt(String(minAge));
-      if (maxAge) whereClause.age.lte = parseInt(String(maxAge));
+    if (minAge) {
+      whereClause.age = { ...whereClause.age, gte: parseInt(minAge as string) };
     }
-
-    // Potential filtering (filtering based on associated scouting reports)
+    if (maxAge) {
+      whereClause.age = { ...whereClause.age, lte: parseInt(maxAge as string) };
+    }
     if (minPotential) {
       whereClause.reports = {
         some: {
-          potential: {
-            in: String(minPotential).split(',') // e.g. "Elite,First Team"
-          }
+          potential: minPotential as string
         }
       };
     }
-
-    // Search query (first name, last name, club, nationality)
     if (search) {
-      const searchStr = String(search);
+      const searchStr = search as string;
       whereClause.OR = [
         { firstName: { contains: searchStr } },
         { lastName: { contains: searchStr } },
@@ -109,56 +95,66 @@ router.get('/', authenticateJWT as any, async (req: AuthenticatedRequest, res) =
       where: whereClause,
       include: {
         reports: {
+          orderBy: { createdAt: 'desc' },
+          take: 1, // Only get the latest report
           select: {
             potential: true,
             recommendation: true
           }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { lastName: 'asc' }
     });
 
-    return res.json(players);
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    res.json(players);
+  } catch (error) {
+    console.error('Błąd pobierania zawodników:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas pobierania zawodników' });
   }
 });
 
-// Get single player
-router.get('/:id', authenticateJWT as any, async (req, res) => {
+// GET /:id - Single Player details
+router.get('/:id', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const playerId = parseInt(req.params.id);
+    if (isNaN(playerId)) {
+      return res.status(400).json({ error: 'Nieprawidłowy identyfikator zawodnika' });
+    }
+
     const player = await prisma.player.findUnique({
-      where: { id: parseInt(req.params.id) },
+      where: { id: playerId },
       include: {
         reports: {
+          orderBy: { createdAt: 'desc' },
           include: {
             author: {
-              select: { name: true, role: true }
+              select: { username: true, role: true, name: true }
             }
-          },
-          orderBy: { createdAt: 'desc' }
+          }
         },
         videos: {
           orderBy: { createdAt: 'desc' }
+        },
+        watchlist: {
+          where: { userId: req.user?.id }
         }
       }
     });
 
     if (!player) {
-      return res.status(404).json({ error: 'Player not found' });
+      return res.status(404).json({ error: 'Zawodnik nie został znaleziony' });
     }
 
-    return res.json(player);
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    res.json(player);
+  } catch (error) {
+    console.error('Błąd pobierania zawodnika:', error);
+    res.status(500).json({ error: 'Wystąpił błąd serwera' });
   }
 });
 
-// Create player (Admin & Head Scout & Scout can add players)
-router.post('/', authenticateJWT as any, upload.single('photo'), async (req: AuthenticatedRequest, res) => {
+// POST / - Create player
+router.post('/', authenticateJWT, upload.single('photo'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
-
     const {
       firstName,
       lastName,
@@ -175,10 +171,11 @@ router.post('/', authenticateJWT as any, upload.single('photo'), async (req: Aut
       mentality
     } = req.body;
 
-    let photoUrl = req.body.photoUrl || null;
-    if (req.file) {
-      photoUrl = `/uploads/${req.file.filename}`;
+    if (!firstName || !lastName || !position || !age || !club || !nationality || !height || !preferredFoot) {
+      return res.status(400).json({ error: 'Wszystkie podstawowe pola profilu są wymagane.' });
     }
+
+    const photoUrl = req.file ? `/uploads/photos/${req.file.filename}` : null;
 
     const player = await prisma.player.create({
       data: {
@@ -191,38 +188,50 @@ router.post('/', authenticateJWT as any, upload.single('photo'), async (req: Aut
         height: parseInt(height),
         preferredFoot,
         photoUrl,
-        technique: parseInt(technique),
-        speed: parseInt(speed),
-        physicality: parseInt(physicality),
-        creativity: parseInt(creativity),
-        mentality: parseInt(mentality),
-        creatorId: req.user.id
+        technique: technique ? Math.min(20, Math.max(1, parseInt(technique))) : 10,
+        speed: speed ? Math.min(20, Math.max(1, parseInt(speed))) : 10,
+        physicality: physicality ? Math.min(20, Math.max(1, parseInt(physicality))) : 10,
+        creativity: creativity ? Math.min(20, Math.max(1, parseInt(creativity))) : 10,
+        mentality: mentality ? Math.min(20, Math.max(1, parseInt(mentality))) : 10,
+        creatorId: req.user!.id
       }
     });
 
-    return res.status(201).json(player);
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    // Notify all Head Scouts and Admins about a new player
+    const users = await prisma.user.findMany({
+      where: { role: { in: ['ADMIN', 'HEAD_SCOUT'] } }
+    });
+
+    for (const u of users) {
+      await prisma.notification.create({
+        data: {
+          userId: u.id,
+          message: `Dodano nowego zawodnika: ${player.firstName} ${player.lastName} (${player.position}) przez ${req.user!.username}`
+        }
+      });
+    }
+
+    res.status(201).json(player);
+  } catch (error) {
+    console.error('Błąd tworzenia zawodnika:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas dodawania zawodnika' });
   }
 });
 
-// Edit player (Admin & Head Scout & Scout who created it, or Admin/Head Scout can edit any)
-router.put('/:id', authenticateJWT as any, upload.single('photo'), async (req: AuthenticatedRequest, res) => {
+// PUT /:id - Edit player
+router.put('/:id', authenticateJWT, upload.single('photo'), async (req: AuthenticatedRequest, res: Response) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
     const playerId = parseInt(req.params.id);
+    if (isNaN(playerId)) {
+      return res.status(400).json({ error: 'Nieprawidłowy identyfikator' });
+    }
 
     const existingPlayer = await prisma.player.findUnique({
       where: { id: playerId }
     });
 
     if (!existingPlayer) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
-
-    // Role check: Admin and Head Scout can edit any, Scout can only edit players they created
-    if (req.user.role === 'SCOUT' && existingPlayer.creatorId !== req.user.id) {
-      return res.status(403).json({ error: 'Forbidden: You can only edit players you added' });
+      return res.status(404).json({ error: 'Zawodnik nie istnieje' });
     }
 
     const {
@@ -243,62 +252,92 @@ router.put('/:id', authenticateJWT as any, upload.single('photo'), async (req: A
 
     let photoUrl = existingPlayer.photoUrl;
     if (req.file) {
-      photoUrl = `/uploads/${req.file.filename}`;
-    } else if (req.body.photoUrl) {
-      photoUrl = req.body.photoUrl;
+      if (existingPlayer.photoUrl) {
+        const oldPath = path.join(process.cwd(), existingPlayer.photoUrl);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
+      }
+      photoUrl = `/uploads/photos/${req.file.filename}`;
     }
 
     const updatedPlayer = await prisma.player.update({
       where: { id: playerId },
       data: {
-        firstName,
-        lastName,
-        position,
-        age: age ? parseInt(age) : undefined,
-        club,
-        nationality,
-        height: height ? parseInt(height) : undefined,
-        preferredFoot,
+        firstName: firstName || existingPlayer.firstName,
+        lastName: lastName || existingPlayer.lastName,
+        position: position || existingPlayer.position,
+        age: age ? parseInt(age) : existingPlayer.age,
+        club: club || existingPlayer.club,
+        nationality: nationality || existingPlayer.nationality,
+        height: height ? parseInt(height) : existingPlayer.height,
+        preferredFoot: preferredFoot || existingPlayer.preferredFoot,
         photoUrl,
-        technique: technique ? parseInt(technique) : undefined,
-        speed: speed ? parseInt(speed) : undefined,
-        physicality: physicality ? parseInt(physicality) : undefined,
-        creativity: creativity ? parseInt(creativity) : undefined,
-        mentality: mentality ? parseInt(mentality) : undefined
+        technique: technique ? Math.min(20, Math.max(1, parseInt(technique))) : existingPlayer.technique,
+        speed: speed ? Math.min(20, Math.max(1, parseInt(speed))) : existingPlayer.speed,
+        physicality: physicality ? Math.min(20, Math.max(1, parseInt(physicality))) : existingPlayer.physicality,
+        creativity: creativity ? Math.min(20, Math.max(1, parseInt(creativity))) : existingPlayer.creativity,
+        mentality: mentality ? Math.min(20, Math.max(1, parseInt(mentality))) : existingPlayer.mentality
       }
     });
 
-    // Notify users watching this player
-    await createNotificationForWatchers(playerId, `Profile of ${updatedPlayer.firstName} ${updatedPlayer.lastName} has been updated.`);
+    // Notify observers
+    const watchers = await prisma.watchlist.findMany({
+      where: { playerId: updatedPlayer.id }
+    });
 
-    return res.json(updatedPlayer);
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    for (const w of watchers) {
+      await prisma.notification.create({
+        data: {
+          userId: w.userId,
+          message: `Profil zawodnika ${updatedPlayer.firstName} ${updatedPlayer.lastName} na twojej liście obserwowanych został zaktualizowany.`
+        }
+      });
+    }
+
+    res.json(updatedPlayer);
+  } catch (error) {
+    console.error('Błąd aktualizacji zawodnika:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas aktualizacji zawodnika' });
   }
 });
 
-// Delete player (Admin and Head Scout only)
-router.delete('/:id', authenticateJWT as any, requireRole(['ADMIN', 'HEAD_SCOUT']) as any, async (req, res) => {
+// DELETE /:id - Delete player
+router.delete('/:id', authenticateJWT, authorizeRoles(['ADMIN', 'HEAD_SCOUT']), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const playerId = parseInt(req.params.id);
+    if (isNaN(playerId)) {
+      return res.status(400).json({ error: 'Nieprawidłowy identyfikator' });
+    }
+
     const existingPlayer = await prisma.player.findUnique({
       where: { id: playerId }
     });
 
     if (!existingPlayer) {
-      return res.status(404).json({ error: 'Player not found' });
+      return res.status(404).json({ error: 'Zawodnik nie istnieje' });
     }
 
-    // Notify watchers before delete
-    await createNotificationForWatchers(playerId, `Player ${existingPlayer.firstName} ${existingPlayer.lastName} has been deleted from the database.`);
+    // Delete static files
+    if (existingPlayer.photoUrl) {
+      const photoPath = path.join(process.cwd(), existingPlayer.photoUrl);
+      if (fs.existsSync(photoPath)) fs.unlinkSync(photoPath);
+    }
+
+    const videos = await prisma.video.findMany({ where: { playerId } });
+    for (const video of videos) {
+      const videoPath = path.join(process.cwd(), video.videoUrl);
+      if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+    }
 
     await prisma.player.delete({
       where: { id: playerId }
     });
 
-    return res.json({ message: 'Player deleted successfully' });
-  } catch (error: any) {
-    return res.status(500).json({ error: error.message });
+    res.json({ message: 'Zawodnik usunięty.' });
+  } catch (error) {
+    console.error('Błąd usuwania zawodnika:', error);
+    res.status(500).json({ error: 'Wystąpił błąd podczas usuwania zawodnika' });
   }
 });
 

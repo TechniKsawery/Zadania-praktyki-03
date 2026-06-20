@@ -15,6 +15,18 @@
   --success-color: #10b981;
   --warning-color: #f59e0b;
 
+  /* Legacy variable mappings for components */
+  --bg-main: var(--bg-primary);
+  --bg-input: rgba(0, 0, 0, 0.35);
+  --color-primary: var(--accent-color);
+  --color-text-main: var(--text-primary);
+  --color-text-muted: var(--text-secondary);
+  --radius-sm: var(--border-radius-sm);
+  --radius-md: var(--border-radius-md);
+  --radius-lg: var(--border-radius-lg);
+  --color-danger: var(--error-color);
+  --color-warning: var(--warning-color);
+
   /* Typography */
   --font-title: 'Montserrat', sans-serif;
   --font-body: 'Outfit', sans-serif;
@@ -288,3 +300,38 @@ h1, h2, h3, h4, h5, h6 {
 .animate-slide-up {
   animation: slideUp var(--transition-slow) forwards;
 }
+
+/* Glassmorphism utilities mapping */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 30px 0 var(--glass-shadow);
+  padding: 1.5rem;
+  transition: transform var(--transition-slow), border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.glass-panel:hover {
+  border-color: rgba(var(--accent-rgb), 0.3);
+}
+
+.glass-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+  outline: none;
+}
+
+.glass-input:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.15);
+}
+
