@@ -1,0 +1,94 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int            @id @default(autoincrement())
+  username      String         @unique
+  email         String         @unique
+  passwordHash  String
+  name          String?
+  role          String         @default("SCOUT") // "ADMIN", "HEAD_SCOUT", "SCOUT"
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  reports       ScoutingReport[]
+  watchlist     Watchlist[]
+  videos        Video[]
+  notifications Notification[]
+}
+
+model Player {
+  id            Int            @id @default(autoincrement())
+  firstName     String
+  lastName      String
+  position      String
+  age           Int
+  club          String
+  nationality   String
+  height        Int
+  preferredFoot String         // "LEFT", "RIGHT", "BOTH"
+  photoUrl      String?
+  technique     Int            // 1-20
+  speed         Int            // 1-20
+  physicality   Int            // 1-20
+  creativity    Int            // 1-20
+  mentality     Int            // 1-20
+  creatorId     Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  reports       ScoutingReport[]
+  watchlist     Watchlist[]
+  videos        Video[]
+}
+
+model ScoutingReport {
+  id                      Int      @id @default(autoincrement())
+  playerId                Int
+  player                  Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  authorId                Int
+  author                  User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  strengths               String
+  weaknesses              String
+  potential               String   // e.g. "Elite", "First Team", "Squad Player", "Development Needed"
+  recommendation          String   // e.g. "SIGN", "MONITOR", "DISCARD"
+  aiDescription           String?
+  aiDevelopmentSuggestion String?
+  aiComparison            String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+}
+
+model Watchlist {
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerId  Int
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, playerId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Video {
+  id           Int      @id @default(autoincrement())
+  playerId     Int
+  player       Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  title        String
+  videoUrl     String
+  uploadedById Int
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+}
