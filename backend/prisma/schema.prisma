@@ -44,6 +44,7 @@ model Player {
   reports       ScoutingReport[]
   watchlist     Watchlist[]
   videos        Video[]
+  notifications Notification[]
 }
 
 model ScoutingReport {
@@ -77,6 +78,8 @@ model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playerId  Int?
+  player    Player?  @relation(fields: [playerId], references: [id], onDelete: Cascade)
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())

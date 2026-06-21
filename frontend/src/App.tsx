@@ -16,6 +16,7 @@ interface Notification {
   message: string;
   read: boolean;
   createdAt: string;
+  playerId?: number | null;
 }
 
 function App() {
@@ -101,6 +102,15 @@ function App() {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleNotificationClick = async (n: Notification) => {
+    await markNotificationRead(n.id);
+    setShowNotifications(false);
+    if (n.playerId) {
+      setSelectedPlayerId(n.playerId);
+      setCurrentView('player-details');
     }
   };
 
@@ -253,9 +263,89 @@ function App() {
               <button type="submit" className="btn btn-primary" style={{ width: '100%', gap: '8px', marginBottom: '15px' }}>
                 <LogIn size={16} /> Zaloguj się
               </button>
-              <div style={{ textAlign: 'center', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', fontSize: '13px', marginBottom: '15px' }}>
                 <span style={{ color: 'var(--color-text-muted)' }}>Nowy w Scout Pro? </span>
                 <button type="button" onClick={() => setIsRegister(true)} style={{ background: 'none', border: 'none', color: 'var(--color-primary)', fontWeight: 600, cursor: 'pointer' }}>Utwórz konto</button>
+              </div>
+
+              <div style={{ marginTop: '20px', paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', marginBottom: '10px', textAlign: 'center', fontWeight: 600 }}>
+                  Konta testowe (kliknij, aby uzupełnić):
+                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthEmail('admin@scoutpro.com');
+                      setAuthPassword('adminpassword');
+                    }}
+                    className="glass-panel"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      transition: 'background 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    <span><strong>Admin:</strong> admin@scoutpro.com</span>
+                    <span style={{ fontSize: '10px', color: 'var(--color-primary)', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>ADMIN</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthEmail('headscout@scoutpro.com');
+                      setAuthPassword('headpassword');
+                    }}
+                    className="glass-panel"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      transition: 'background 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    <span><strong>Head Scout:</strong> headscout@scoutpro.com</span>
+                    <span style={{ fontSize: '10px', color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>HEAD SCOUT</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAuthEmail('scout@scoutpro.com');
+                      setAuthPassword('scoutpassword');
+                    }}
+                    className="glass-panel"
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      textAlign: 'left',
+                      background: 'rgba(255, 255, 255, 0.02)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
+                      transition: 'background 0.2s, border-color 0.2s',
+                    }}
+                  >
+                    <span><strong>Scout:</strong> scout@scoutpro.com</span>
+                    <span style={{ fontSize: '10px', color: '#eab308', background: 'rgba(234, 179, 8, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>SCOUT</span>
+                  </button>
+                </div>
               </div>
             </form>
           )}
@@ -306,7 +396,7 @@ function App() {
                     {notifications.map(n => (
                       <div 
                         key={n.id} 
-                        onClick={() => markNotificationRead(n.id)}
+                        onClick={() => handleNotificationClick(n)}
                         style={{ padding: '8px 10px', borderRadius: 'var(--radius-sm)', background: n.read ? 'rgba(255,255,255,0.02)' : 'rgba(16,185,129,0.06)', border: `1px solid ${n.read ? 'transparent' : 'rgba(16,185,129,0.1)'}`, cursor: 'pointer', fontSize: '12.5px' }}
                       >
                         <p style={{ color: n.read ? 'var(--color-text-muted)' : 'var(--color-text-main)' }}>{n.message}</p>

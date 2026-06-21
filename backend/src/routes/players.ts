@@ -206,6 +206,7 @@ router.post('/', authenticateJWT, upload.single('photo'), async (req: Authentica
       await prisma.notification.create({
         data: {
           userId: u.id,
+          playerId: player.id,
           message: `Dodano nowego zawodnika: ${player.firstName} ${player.lastName} (${player.position}) przez ${req.user!.username}`
         }
       });
@@ -290,6 +291,7 @@ router.put('/:id', authenticateJWT, upload.single('photo'), async (req: Authenti
       await prisma.notification.create({
         data: {
           userId: w.userId,
+          playerId: updatedPlayer.id,
           message: `Profil zawodnika ${updatedPlayer.firstName} ${updatedPlayer.lastName} na twojej liście obserwowanych został zaktualizowany.`
         }
       });

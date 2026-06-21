@@ -12,9 +12,10 @@
 4. **Asystent AI (Google Gemini)**: Generowanie profilu opisowego gracza, automatyczna analiza potencjału, sugestie ścieżki treningowej oraz porównanie do znanych na świecie piłkarzy na podstawie ocen.
 5. **System Wideo**: Wgrywanie plików wideo z meczów/treningów bezpośrednio na podstronę profilu gracza i ich odtwarzanie.
 6. **Watchlist (Obserwowani)**: Zapisywanie zawodników do prywatnej listy szybkiego dostępu.
-7. **Powiadomienia w czasie rzeczywistym**: System notyfikacji o nowo dodanych graczach lub raportach.
+7. **Powiadomienia z nawigacją**: System notyfikacji o nowo dodanych graczach, raportach lub wideo. Kliknięcie w powiadomienie automatycznie przekierowuje użytkownika bezpośrednio na profil danego zawodnika.
 8. **Eksport do PDF**: Drukowanie oraz generowanie profesjonalnego, dedykowanego raportu w formacie PDF jednym kliknięciem.
-9. **Role Użytkowników**: Trzy poziomy uprawnień systemowych: `Admin`, `Head Scout` oraz `Scout`.
+9. **Panel Administratora**: W pełni funkcjonalny panel do zarządzania rolami użytkowników (zmiana ról na `Admin`, `Head Scout` lub `Scout`).
+10. **Pomocnik Logowania**: Szybki wybór i automatyczne uzupełnianie formularza logowania kontami testowymi bezpośrednio z interfejsu karty logowania.
 
 ---
 
@@ -77,12 +78,12 @@ npm run dev
 
 ## 🔐 Konta Testowe (Zasilone w Seedu)
 
-W celach łatwego przetestowania poziomów dostępów i uprawnień, w bazie danych znajdują się następujące konta:
+W celach łatwego przetestowania poziomów dostępów i uprawnień, w bazie danych znajdują się następujące konta (można je automatycznie uzupełnić klikając przyciski na ekranie logowania):
 
-| Rola systemowa | Login (Username) | Hasło | Opis uprawnień |
-| :--- | :--- | :--- | :--- |
-| **Admin** | `admin` | `admin123` | Zarządzanie użytkownikami (zmiana ról), usuwanie zawodników, pełen CRUD. |
-| **Head Scout** | `headscout` | `headscout123` | Zatwierdzanie raportów, usuwanie zawodników, edycja i dodawanie graczy. |
-| **Scout** | `scout` | `scout123` | Dodawanie graczy, tworzenie raportów, własna lista obserwowanych (brak praw do usuwania). |
+| Rola systemowa | Adres e-mail | Login (Username) | Hasło | Opis uprawnień |
+| :--- | :--- | :--- | :--- | :--- |
+| **Admin** | `admin@scoutpro.com` | `admin` | `adminpassword` | Zarządzanie rolami użytkowników (przypisywanie ról w panelu administratora), usuwanie zawodników, pełen CRUD. |
+| **Head Scout** | `headscout@scoutpro.com` | `headscout` | `headpassword` | Zatwierdzanie/edycja raportów, usuwanie zawodników, edycja i dodawanie graczy. |
+| **Scout** | `scout@scoutpro.com` | `scout` | `scoutpassword` | Dodawanie graczy, tworzenie raportów, własna lista obserwowanych (brak praw do usuwania). |
 
 *W aplikacji podczas rejestracji nowego konta również możesz wybrać swoją początkową rolę testową, aby ułatwić weryfikację aplikacji.*

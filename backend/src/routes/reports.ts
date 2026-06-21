@@ -14,6 +14,7 @@ async function createNotificationForWatchers(playerId: number, message: string) 
     });
     const notifications = watchers.map(w => ({
       userId: w.userId,
+      playerId,
       message
     }));
     if (notifications.length > 0) {

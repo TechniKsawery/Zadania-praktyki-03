@@ -44,3 +44,6 @@ export const requireRole = (roles: string[]) => {
     next();
   };
 };
+
+export const authorizeRoles = requireRole;
+

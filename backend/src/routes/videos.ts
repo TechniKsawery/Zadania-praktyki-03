@@ -79,6 +79,7 @@ router.post('/upload', authenticateJWT as any, upload.single('video'), async (re
       });
       const notifications = watchers.map(w => ({
         userId: w.userId,
+        playerId: parseInt(playerId),
         message: `New video highlight "${title}" has been uploaded for ${player.firstName} ${player.lastName}.`
       }));
       if (notifications.length > 0) {

@@ -147,4 +147,69 @@ router.get('/me', authenticateJWT, async (req: AuthenticatedRequest, res: Respon
   }
 });
 
+// Get all users (Admin only)
+router.get('/users', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user || req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Brak uprawnień. Tylko administrator może wyświetlać użytkowników.' });
+    }
+
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        role: true,
+        createdAt: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Błąd pobierania użytkowników:', error);
+    res.status(500).json({ error: 'Wystąpił błąd serwera' });
+  }
+});
+
+// Update user role (Admin only)
+router.put('/users/:userId/role', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.user || req.user.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Brak uprawnień. Tylko administrator może zmieniać role.' });
+    }
+
+    const userId = parseInt(req.params.userId);
+    const { role } = req.body;
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Nieprawidłowe ID użytkownika' });
+    }
+
+    if (!role || !['ADMIN', 'HEAD_SCOUT', 'SCOUT'].includes(role)) {
+      return res.status(400).json({ error: 'Nieprawidłowa rola' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { role },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        name: true,
+        role: true
+      }
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Błąd aktualizacji roli:', error);
+    res.status(500).json({ error: 'Wystąpił błąd serwera' });
+  }
+});
+
 export default router;
