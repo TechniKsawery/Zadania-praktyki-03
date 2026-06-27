@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth';
 
 const prisma = new PrismaClient();
@@ -8,7 +8,7 @@ const router = Router();
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 let genAI: GoogleGenerativeAI | null = null;
-if (apiKey) {
+if (apiKey && !apiKey.startsWith("your_")) {
   genAI = new GoogleGenerativeAI(apiKey);
 }
 
@@ -80,8 +80,18 @@ router.post('/analyze', authenticateJWT as any, async (req: AuthenticatedRequest
     // Attempt to call Gemini API if key is present
     if (genAI) {
       try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ 
+          model: 'gemini-2.5-flash',
+          safetySettings: [
+            { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+            { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
+          ]
+        });
         const prompt = `Jesteś ekspertem i szefem scoutingu piłkarskiego. Przeanalizuj poniższe dane zawodnika i wygeneruj profesjonalną analizę w języku polskim w formacie JSON z kluczami: "description", "potential", "comparison", "suggestions".
+        
+        Uwaga: Dane zawodnika (w tym nazwisko, klub i narodowość) mogą być fikcyjne, testowe lub brzmieć nietypowo (np. zawierać losowe znaki lub potoczne słowa). Zignoruj ich nietypowe brzmienie i stwórz profesjonalną, poważną analizę techniczną wyłącznie na podstawie ocen liczbowych, wieku i pozycji zawodnika.
         
         Dane zawodnika:
         Imię i nazwisko: ${player.firstName} ${player.lastName}
@@ -110,16 +120,16 @@ router.post('/analyze', authenticateJWT as any, async (req: AuthenticatedRequest
         }
 
         const data = JSON.parse(cleanJson);
-        return res.json(data);
+        return res.json({ ...data, isMock: false });
       } catch (geminiError: any) {
         console.warn('Gemini API call failed, falling back to mock generator:', geminiError.message);
         const fallbackData = generateMockAIAnalysis(player);
-        return res.json(fallbackData);
+        return res.json({ ...fallbackData, isMock: true });
       }
     } else {
       // Fallback directly
       const fallbackData = generateMockAIAnalysis(player);
-      return res.json(fallbackData);
+      return res.json({ ...fallbackData, isMock: true });
     }
   } catch (error: any) {
     return res.status(500).json({ error: error.message });

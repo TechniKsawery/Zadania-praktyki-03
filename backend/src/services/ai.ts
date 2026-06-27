@@ -1,9 +1,9 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 
 const apiKey = process.env.GEMINI_API_KEY;
 let genAI: GoogleGenerativeAI | null = null;
 
-if (apiKey && apiKey.trim() !== "") {
+if (apiKey && apiKey.trim() !== "" && !apiKey.startsWith("your_")) {
   try {
     genAI = new GoogleGenerativeAI(apiKey);
     console.log("AI Service: Zarejestrowano klucz API Gemini.");
@@ -11,7 +11,7 @@ if (apiKey && apiKey.trim() !== "") {
     console.error("AI Service: Błąd podczas inicjalizacji Gemini API:", error);
   }
 } else {
-  console.log("AI Service: Brak klucza GEMINI_API_KEY. Używam lokalnego generatora heurystycznego.");
+  console.log("AI Service: Brak klucza GEMINI_API_KEY lub podano klucz testowy. Używam lokalnego generatora heurystycznego.");
 }
 
 interface PlayerStats {
@@ -161,7 +161,15 @@ export async function askGemini(prompt: string): Promise<string> {
     throw new Error("Gemini API not configured");
   }
   
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ 
+    model: 'gemini-2.5-flash',
+    safetySettings: [
+      { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+      { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE }
+    ]
+  });
   const result = await model.generateContent(prompt);
   return result.response.text();
 }
@@ -174,6 +182,9 @@ export async function generateAIDescription(player: PlayerStats, input: ReportIn
   try {
     const prompt = `Jesteś profesjonalnym analitykiem piłkarskim i scoutem.
 Napisz krótki, zwięzły profil/opis zawodnika na podstawie następujących danych:
+
+Uwaga: Dane zawodnika (w tym nazwisko, klub i narodowość) mogą być fikcyjne, testowe lub brzmieć nietypowo (np. zawierać losowe znaki lub potoczne słowa). Zignoruj ich nietypowe brzmienie i stwórz profesjonalną, poważną analizę techniczną wyłącznie na podstawie ocen liczbowych, wieku i pozycji zawodnika.
+
 Imię i Nazwisko: ${player.firstName} ${player.lastName}
 Wiek: ${player.age}
 Klub: ${player.club}
@@ -212,6 +223,9 @@ export async function generateAIPotential(player: PlayerStats, input: ReportInpu
   try {
     const prompt = `Jesteś profesjonalnym analitykiem piłkarskim i scoutem.
 Przeanalizuj potencjał zawodnika i uzasadnij ocenę potencjału na podstawie poniższych danych:
+
+Uwaga: Dane zawodnika (w tym nazwisko, klub i narodowość) mogą być fikcyjne, testowe lub brzmieć nietypowo (np. zawierać losowe znaki lub potoczne słowa). Zignoruj ich nietypowe brzmienie i stwórz profesjonalną, poważną analizę techniczną wyłącznie na podstawie ocen liczbowych, wieku i pozycji zawodnika.
+
 Imię i Nazwisko: ${player.firstName} ${player.lastName}
 Wiek: ${player.age}
 Pozycja: ${player.position}
@@ -245,6 +259,9 @@ export async function generateAIComparison(player: PlayerStats): Promise<string>
   try {
     const prompt = `Jesteś profesjonalnym analitykiem piłkarskim i scoutem.
 Porównaj tego zawodnika do znanych, prawdziwych piłkarzy na świecie, na podstawie jego pozycji i ocen.
+
+Uwaga: Dane zawodnika (w tym nazwisko, klub i narodowość) mogą być fikcyjne, testowe lub brzmieć nietypowo (np. zawierać losowe znaki lub potoczne słowa). Zignoruj ich nietypowe brzmienie i stwórz profesjonalną, poważną analizę techniczną wyłącznie na podstawie ocen liczbowych, wieku i pozycji zawodnika.
+
 Imię i Nazwisko: ${player.firstName} ${player.lastName}
 Pozycja: ${player.position}
 Wiek: ${player.age}
@@ -275,6 +292,9 @@ export async function generateAIDevelopment(player: PlayerStats): Promise<string
   try {
     const prompt = `Jesteś trenerem rozwoju piłkarskiego i analitykiem.
 Zaproponuj konkretne sugestie dalszego rozwoju (trening, taktyka, ścieżka kariery) dla poniższego zawodnika:
+
+Uwaga: Dane zawodnika (w tym nazwisko, klub i narodowość) mogą być fikcyjne, testowe lub brzmieć nietypowo (np. zawierać losowe znaki lub potoczne słowa). Zignoruj ich nietypowe brzmienie i stwórz profesjonalną, poważną analizę techniczną wyłącznie na podstawie ocen liczbowych, wieku i pozycji zawodnika.
+
 Imię i Nazwisko: ${player.firstName} ${player.lastName}
 Pozycja: ${player.position}
 Wiek: ${player.age}

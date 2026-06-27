@@ -48,7 +48,8 @@ W folderze `/backend` znajduje się plik `.env` z domyślną konfiguracją. Moż
 * `PORT=5000` (port serwera backendu).
 * `DATABASE_URL="file:./dev.db"` (ścieżka do lokalnej bazy SQLite).
 * `JWT_SECRET` (tajny klucz do tokenów autoryzacyjnych).
-* `GEMINI_API_KEY=""` (Opcjonalny klucz Google Gemini API. **Pozostaw pusty, jeśli chcesz korzystać z lokalnego, inteligentnego generatora opinii AI bez dodatkowej konfiguracji**).
+* `GEMINI_API_KEY=""` (Opcjonalny klucz Google Gemini API z Google AI Studio. Wspiera nowe klucze zaczynające się od `AQ.` oraz starsze `AIzaSy`. **Pozostaw pusty, jeśli chcesz korzystać z lokalnego, inteligentnego generatora opinii AI bez dodatkowej konfiguracji**).
+  * **Wskaźnik statusu API:** W zakładce *Analiza AI* na profilu zawodnika znajduje się wizualna plakietka informująca, czy analiza pochodzi z chmury (zielony wskaźnik *Połączono z Gemini API*), z bazy danych (szary) czy z lokalnego generatora (pomarańczowy wskaźnik *Tryb offline*).
 
 ---
 

@@ -60,6 +60,7 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({ playerId, token, u
     potential: string;
     comparison: string;
     suggestions: string;
+    isMock?: boolean;
   } | null>(null);
 
   // Stan formularza nowego raportu
@@ -599,6 +600,21 @@ export const PlayerProfile: React.FC<PlayerProfileProps> = ({ playerId, token, u
 
               {!generatingAi && aiResult && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                  {/* Status źródła analizy */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', background: 'rgba(255,255,255,0.02)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)', alignSelf: 'flex-start' }}>
+                    <span style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      background: aiResult.isMock === undefined ? '#64748b' : aiResult.isMock === false ? '#00F59b' : '#f59e0b',
+                      boxShadow: aiResult.isMock === undefined ? 'none' : aiResult.isMock === false ? '0 0 8px #00F59b' : '0 0 8px #f59e0b'
+                    }} />
+                    <span style={{ color: 'var(--color-text-muted)' }}>Status źródła:</span>
+                    <strong style={{ color: aiResult.isMock === undefined ? '#94a3b8' : aiResult.isMock === false ? '#00F59b' : '#f59e0b' }}>
+                      {aiResult.isMock === undefined ? 'Wczytano z bazy danych (zapisana analiza)' : aiResult.isMock === false ? 'Połączono z Gemini API' : 'Tryb offline (lokalny mock)'}
+                    </strong>
+                  </div>
+
                   {/* Podsumowanie */}
                   <div className="glass-panel" style={{ padding: '20px', borderLeft: '4px solid var(--color-primary)' }}>
                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: 'var(--color-primary)' }}>
